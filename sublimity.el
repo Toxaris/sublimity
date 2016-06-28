@@ -132,42 +132,44 @@ handle scrolling."
 ;; + hook functions
 
 (defun sublimity--pre-command ()
-  (setq sublimity--prev-lin (line-number-at-pos (window-start))
-        sublimity--prev-col (window-hscroll)
-        sublimity--prev-buf (current-buffer)
-        sublimity--prev-wnd (selected-window)
-        sublimity--prepared t)
-  (sublimity--run-hooks sublimity--pre-command-functions))
+  (unless (minibufferp)
+    (setq sublimity--prev-lin (line-number-at-pos (window-start))
+          sublimity--prev-col (window-hscroll)
+          sublimity--prev-buf (current-buffer)
+          sublimity--prev-wnd (selected-window)
+          sublimity--prepared t)
+    (sublimity--run-hooks sublimity--pre-command-functions)))
 
 (defun sublimity--post-command ()
-  ;; avoid running post-command multiple times
-  (when sublimity--prepared
-    (setq sublimity--prepared nil)
-    (let ((handle-scroll (cl-every 'eval sublimity-handle-scroll-criteria)))
-      (when handle-scroll
-        (let (deactivate-mark)
-          ;; do vscroll
-          (unless (pos-visible-in-window-p)
-            (recenter))
-          ;; do hscroll
-          (when (and sublimity-auto-hscroll-mode
-                     (or truncate-lines
-                         (truncated-partial-width-window-p))
-                     (or (< (current-column) (window-hscroll))
-                         (< (+ (window-hscroll) (window-width))
-                            (current-column))))
-            (sublimity--horizontal-recenter))))
-      ;; call post-command functions
-      (sublimity--run-hooks sublimity--post-command-functions)
-      ;; animation
-      (when handle-scroll
-        (let ((lins (- (line-number-at-pos (window-start))
-                       sublimity--prev-lin))
-              (cols (- (window-hscroll) sublimity--prev-col)))
-          (when (not (zerop lins))
-            (sublimity--run-hooks sublimity--post-vscroll-functions lins))
-          (when (not (zerop cols))
-            (sublimity--run-hooks sublimity--post-hscroll-functions cols)))))))
+  (unless (minibufferp)
+    ;; avoid running post-command multiple times
+    (when sublimity--prepared
+      (setq sublimity--prepared nil)
+      (let ((handle-scroll (cl-every 'eval sublimity-handle-scroll-criteria)))
+        (when handle-scroll
+          (let (deactivate-mark)
+            ;; do vscroll
+            (unless (pos-visible-in-window-p)
+              (recenter))
+            ;; do hscroll
+            (when (and sublimity-auto-hscroll-mode
+                       (or truncate-lines
+                           (truncated-partial-width-window-p))
+                       (or (< (current-column) (window-hscroll))
+                           (< (+ (window-hscroll) (window-width))
+                              (current-column))))
+              (sublimity--horizontal-recenter))))
+        ;; call post-command functions
+        (sublimity--run-hooks sublimity--post-command-functions)
+        ;; animation
+        (when handle-scroll
+          (let ((lins (- (line-number-at-pos (window-start))
+                         sublimity--prev-lin))
+                (cols (- (window-hscroll) sublimity--prev-col)))
+            (when (not (zerop lins))
+              (sublimity--run-hooks sublimity--post-vscroll-functions lins))
+            (when (not (zerop cols))
+              (sublimity--run-hooks sublimity--post-hscroll-functions cols))))))))
 
 (defun sublimity--window-change ()
   (sublimity--run-hooks sublimity--window-change-functions))
