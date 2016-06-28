@@ -91,14 +91,27 @@
              (append (cl-remove-if 'zerop (sort (fix-list lst) '>))
                      (make-list sublimity-scroll-drift-length 1)))))))
 
+(defun sublimity-scroll--redisplay (cursor)
+  "Like `redisplay', but manipulate point or `cursor-type' to
+show the cursor at position CURSOR."
+  (cond
+   ((pos-visible-in-window-p cursor)
+    (goto-char cursor)
+    (let ((scroll-margin 0))
+      (redisplay)))
+   (t
+    (let (cursor-type)
+      (redisplay)))))
+
 (defun sublimity-scroll--vscroll-effect (lins)
   (save-excursion
-    (let ((speeds (sublimity-scroll--gen-speeds lins)))
+    (let ((target (point))
+          (speeds (sublimity-scroll--gen-speeds lins)))
       (sublimity-scroll--vscroll (- lins))
       (dolist (speed speeds)
         (sublimity-scroll--vscroll speed)
         (force-window-update (selected-window))
-        (redisplay)))))
+        (sublimity-scroll--redisplay target)))))
 
 (defun sublimity-scroll--hscroll-effect (cols)
   (save-excursion
