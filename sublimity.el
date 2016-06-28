@@ -147,8 +147,7 @@ handle scrolling."
       (when handle-scroll
         (let (deactivate-mark)
           ;; do vscroll
-          (when (or (< (point) (window-start))
-                    (>= (point) (window-end)))
+          (unless (pos-visible-in-window-p)
             (recenter))
           ;; do hscroll
           (when (and sublimity-auto-hscroll-mode
